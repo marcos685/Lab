@@ -1,7 +1,6 @@
 #include <fstream>
 #include <map>
 #include <string>
-#include "parCV.hpp"
 #include "minheap.hpp"
 
 using std::fstream;
@@ -15,26 +14,10 @@ struct Huffnode
     Huffnode *left;
     Huffnode *right;
 
-    void make_code(map<unsigned char, string>& results, string padrao = "")
+    friend ostream& operator<< (ostream& out, Huffnode& huff)
     {
-        cout<<this->elem<<'\n';
-        if (this->left == nullptr && this->right == nullptr) 
-            results[elem] = padrao;
-        else
-        {
-            if (this->left != nullptr) 
-                left->make_code(results, padrao+"0");
-            if (this->right != nullptr) 
-                right->make_code(results, padrao+"1");
-        }
-    }
-
-    void traverse()
-    {
-        cout << this->elem << " " << this->peso << "\n";
-        if(this->left != nullptr) this->left->traverse();
-        
-        if(this->right != nullptr) this->right->traverse();
+        out<< "(" << huff.elem << "," << huff.peso << ")";
+        return (out);
     }
 
     bool operator< (const Huffnode& rhs)
@@ -42,59 +25,119 @@ struct Huffnode
         return (this->peso < rhs.peso);
     }
 
-    ostream& operator<< (ostream& out)
-    {
-        out<< "(" << this->elem << "," << this->peso << ")";
-        return (out);
-    }
-
     Huffnode () = default;
 
     Huffnode(char elem, int peso) 
     : elem(elem), peso(peso), left(nullptr), right(nullptr) {}
 
-    Huffnode(int peso, Huffnode l, Huffnode r)
-    : elem('\0'), peso(peso), left(&l), right(&r) {}
+    Huffnode(Huffnode *l, Huffnode *r)
+    : elem('-'), peso(l->peso + r->peso), left(l), right(r) {}
 };
 
-void compress(char *filename)
+/* void make_code(map<unsigned char, string>& results, string padrao = "")
+{
+    if (this->left == nullptr && this->right == nullptr) 
+        results[elem] = padrao;
+    else
+    {
+        if (this->left != nullptr) 
+            left->make_code(results, padrao+"0");
+        if (this->right != nullptr) 
+            right->make_code(results, padrao+"1");
+    }
+}*/
+void traverse(Huffnode huf)
+{
+    cout << huf;
+    if(huf.left != nullptr)  traverse(*(huf.left));
+    if(huf.right != nullptr) traverse(*(huf.right));
+}
+
+map<unsigned char, int> contar_chars (char* filename)
 {
     fstream file(filename);
     map<unsigned char, int> chars;
     MinHeap<Huffnode> ordered_chars;
+    
 
     while(file.peek() != EOF)
     {
         ++chars[file.get()];
     }
 
+    return chars;
+}
+
+vector<Huffnode> make_huff_tree(map<unsigned char, int> chars)
+{
+    vector<Huffnode> huff_tree;
+    MinHeap<Huffnode> ordered_chars;
+
     for (const auto& c : chars)
     {
-        ordered_chars.push(Huffnode(c.first, c.second));
+        huff_tree.push_back(Huffnode(c.first, c.second));
+    }
+    
+    for (int i = 0; i < huff_tree.size(); i++)
+    {
+        cout << &huff_tree[i];
+        ordered_chars.push(&huff_tree[i]);
+        
     }
 
-    int n = ordered_chars.size();
-    Huffnode x, y, z;
-    for (int i = 0; i < n-1; ++i)
+    ordered_chars.print();
+    while(ordered_chars.size() > 1)
     {
-        x = ordered_chars.pop();
-        y = ordered_chars.pop();
-        z = Huffnode(x.peso+y.peso, x, y);
-        ordered_chars.push(z);
-    } 
+        Huffnode *x = ordered_chars.pop();
+        Huffnode *y = ordered_chars.pop();
+        Huffnode z = Huffnode(x, y);
+        huff_tree.push_back(z);
+        cout << z << x <<y <<'\n';
 
-    x = ordered_chars.pop();
-    cout << x.right->elem ;//<< " " << x.right->elem;
-    //x.traverse();
+        ordered_chars.push(&(huff_tree[huff_tree.size()-1]));
+    }
 
+    return huff_tree;
+}
+
+   // for (int i = 0; i < huff_tree.size(); i++) cout<< huff_tree[i];
+    
 
     // map<unsigned char, string> codigo;
-    // x.make_code(codigo);   
-}
+    // w->make_code(codigo);
+
+    // for (const auto& c : codigo)   
+    // {
+    //     cout << '(' << c.first <<' ' << c.second << ')' << '\n';
+    // }
+
+
 
 int main(int argc, char** argv)
 {
     char* fname = argv[1];
+    map<unsigned char, int> ch;
+    vector<Huffnode> huf_tr;
 
-    compress(fname);
+    ch = contar_chars(fname);
+    /* for (const auto& c : ch)
+    {
+        cout<<c.first<<c.second<<'\n';
+    }*/
+
+    huf_tr = make_huff_tree(ch);
+    //cout << *(huf_tr[huf_tr.size()-1].left);
+    traverse(huf_tr[huf_tr.size()-1]);
+
+    /*/for (int i = 0; i < huf_tr.size(); i++)
+    {
+        if(huf_tr[i].left != nullptr ) 
+            cout << (huf_tr[i].left) << ' ';
+        if (huf_tr[i].right != nullptr) 
+            cout << (huf_tr[i].right) << ' ';
+
+        cout << '\n';
+    }*/
+
+    //compress(fname);
 }

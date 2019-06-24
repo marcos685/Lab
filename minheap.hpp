@@ -35,15 +35,15 @@ template <typename T>
 class MinHeap
 {
     private:       
-        vector<T> heap;
+        vector<T*> heap;
 
         void heapify(int i)
         {
             int l = 2*i;
             int r = 2*i + 1;
             int smallest = i;
-            if (l < heap.size() && heap[l] < heap[smallest]) smallest = l;
-            if (r < heap.size() && heap[r] < heap[smallest]) smallest = r;
+            if (l < heap.size() && *(heap[l]) < *(heap[smallest])) smallest = l;
+            if (r < heap.size() && *(heap[r]) < *(heap[smallest])) smallest = r;
 
             if (smallest != i)
             {
@@ -62,15 +62,16 @@ class MinHeap
 
     public:
 
-        void push(T e)
+        void push(T *e)
         {
             heap.push_back(e);
             build_min_heap();
         }
 
-        T pop()
+        T* pop()
         {
-            T min_elem = heap[0];
+            if (heap.size() < 1) throw "[Erro na remoção]: A heap está vazia!";
+            T *min_elem = heap[0];
             heap.erase(heap.begin());
             build_min_heap();
             return min_elem;
@@ -80,7 +81,7 @@ class MinHeap
         {
             for(int i = 0; i <heap.size(); i++)
             {
-               cout<<heap[i]<<endl;
+               cout<<*(heap[i])<<endl;
             }
         }
 
